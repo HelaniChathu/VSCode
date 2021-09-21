@@ -1,10 +1,10 @@
 # Configuration section
 population_size = 10 # How many AIs in the population
 mentor_instances = 5 # How many instances of each defined strategy there are
-episode_length = 10 # How many turns to play
+episode_length = 5 # How many turns to play
 dve = 0.7 # During vs. ending reward
 training_time = 1 # How long to train in seconds per agent
-testing_episodes = 1000 # How many episodes to play during the testing phase
+testing_episodes = 10 # How many episodes to play during the testing phase
 
 # Prisoner's dillema rewards [Player 1 reward, Player 2 reward]
 reward_matrix = [[[2, 2], # Both players cooperate
@@ -38,17 +38,19 @@ class AgentHuman:
         return action
 
     def reward_action(self, state, action, reward):
-        pass
+        pass    #NULL statement. Might do the implementation in future
 
 # Q agents learn the best action to perform for every state encountered
 class AgentQ:
+    ##the constructor that initiate the game attributes
     def __init__(self, memory):
         self.wins = 0 # Number of times agent has won an episode
         self.losses = 0 # Number of times agent has lost an episode
         self.Q = {} # Stores the quality of each action in relation to each state
         self.memory = memory # The number of previous states the agent can factor into its decision
-        self.epsilon_counter = 1 # Inversely related to learning rate
+        self.epsilon_counter = 1 # Invclassersely related to learning rate
 
+    ## Q value that agent return 
     def get_q(self, state):
         quality1 = self.Q[str(state[-self.memory:])][0]
         quality2 = self.Q[str(state[-self.memory:])][1]
@@ -59,6 +61,7 @@ class AgentQ:
         self.Q[str(state[-self.memory:])][0] = quality1
         self.Q[str(state[-self.memory:])][1] = quality2
 
+    ## Normalize to enhance the quality of the value
     def normalize_q(self, state):
         quality1, quality2 = self.get_q(state)
 
@@ -66,6 +69,7 @@ class AgentQ:
 
         self.set_q(state, (quality1 - normalization) * 0.95, (quality2 - normalization) * 0.95)
 
+    ## get the maximum q value
     def max_q(self, state):
         quality1, quality2 = self.get_q(state)
 
@@ -76,10 +80,11 @@ class AgentQ:
         else:
             return 1
 
+    ## initialize 0 for the cells that has not visited and return max q value
     def pick_action(self, state):
         # Decrease learning rate
         self.epsilon_counter += 0.5
-
+         
         # If the given state was never previously encountered
         if str(state[-self.memory:]) not in self.Q:
             # Initialize it with zeros
@@ -149,6 +154,7 @@ class AgentDefined:
         self.losses = 0 # Number of times agent has lost an episode
         self.strategy = strategy
 
+    ## logic to choose an action in PD
     def pick_action(self, state):
         if self.strategy == 0: # Tit for tat
             if len(state) == 0: # On the first tern
@@ -172,6 +178,7 @@ class AgentDefined:
     def mark_defeat(self):
         self.losses += 1
 
+    ## get the percentage of wins/ losses
     def analyse(self):
         # What percentage of games resulted in victory/defeat
         percent_won = 0
@@ -202,7 +209,7 @@ for i in range(population_size):
 
 # Create instances of defined strategies
 for i in range(2): # Number of defined strategies
-    for j in range(mentor_instances):
+    for j in range(mentor_instances): ## numberof instances from the defined strategy
         mentors.append(AgentDefined(i))
 
 # Training time initialization
@@ -263,7 +270,7 @@ while remaining_time > 0:
         reward1 = 0 # Total reward due to the actions of player 1 in the entire episode
         reward2 = 0 # Total reward due to the actions of player 2 in the entire episode
 
-        # Calculate rewards for each player
+        # ?? Calculate rewards for each player
         if action1 == 0 and action2 == 0: # Both players cooperate
             reward1 = reward_matrix[0][0][0]
             reward2 = reward_matrix[0][0][1]
@@ -277,9 +284,11 @@ while remaining_time > 0:
             reward1 = reward_matrix[0][3][0]
             reward2 = reward_matrix[0][3][1]
 
+        ## total reward at the end of the game
         total_reward1 += reward1
         total_reward2 += reward2
 
+        ## increase the quality of a given action: reward_action
         player1.reward_action(state1[:i], action1, reward1 * dve) # Assign reward to action of player 1
         player2.reward_action(state2[:i], action2, reward2 * dve) # Assign reward to action of player 2
 
@@ -287,9 +296,10 @@ while remaining_time > 0:
     if total_reward1 > total_reward2:
         reward_chunk = total_reward1 / episode_length * (1 - dve)
 
+        ## total reward at the end of the episode
         for i in range(episode_length):
             action1 = state2[i]
-
+        
             player1.reward_action(state1[:i], action1, reward_chunk)
 
             player1.mark_victory()
@@ -297,6 +307,7 @@ while remaining_time > 0:
     elif total_reward2 > total_reward1:
         reward_chunk = total_reward2 / episode_length * (1 - dve)
 
+        ## total reward at the end of the episode
         for i in range(episode_length):
             action2 = state1[i]
 
@@ -370,14 +381,14 @@ fig = plt.figure(figsize=(12, 10), dpi=80)
 
 # Row 1
 ax1 = fig.add_subplot(221)
-ax1.set_title("% of Victories")
+ax1.set_title("% of Victories-2")
 ax1.set_xlabel("Time")
 ax1.set_ylabel("Victories")
 
 ax1.stackplot(victories_percent_x, victories_percent_y, colors=row1_colors)
 
 ax2 = fig.add_subplot(222)
-ax2.set_title("% of Victories")
+ax2.set_title("% of Victories-2")
 ax2.set_xlabel("Time")
 ax2.set_ylabel("Victories")
 
@@ -386,14 +397,14 @@ for i in range(len(victories_percent_y)):
 
 # Row 2
 ax3 = fig.add_subplot(223)
-ax3.set_title("% of Victories (Normalized cooperation)")
+ax3.set_title("% of Victories (Normalized cooperation)-3")
 ax3.set_xlabel("Time")
 ax3.set_ylabel("Victories")
 
 ax3.stackplot(victories_percent_x, victories_percent_y, colors=row2_colors)
 
 ax4 = fig.add_subplot(224)
-ax4.set_title("% of Victories (Normalized cooperation)")
+ax4.set_title("% of Victories (Normalized cooperation)-4")
 ax4.set_xlabel("Time")
 ax4.set_ylabel("Victories")
 
